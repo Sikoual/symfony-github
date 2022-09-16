@@ -46,10 +46,17 @@ class BlogController extends AbstractController
     #[Route('/rss.xml', defaults: ['page' => '1', '_format' => 'xml'], methods: ['GET'], name: 'blog_rss')]
     #[Route('/page/{page<[1-9]\d*>}', defaults: ['_format' => 'html'], methods: ['GET'], name: 'blog_index_paginated')]
     #[Cache(smaxage: 10)]
-    public function index(Request $request, int $page, string $_format, PostRepository $posts, TagRepository $tags): Response
-    {
+    public function index(
+        Request $request,
+        int $page,
+        string $_format,
+        PostRepository $posts,
+        TagRepository $tags
+    ): Response {
         $tag = null;
-        if ($request->query->has('tag')) {$tag = $tags->findOneBy(['name' => $request->query->get('tag')]);}
+        if ($request->query->has('tag')) {
+            $tag = $tags->findOneBy(['name' => $request->query->get('tag')]);
+        }
         $latestPosts = $posts->findLatest($page, $tag);
 
         // Every template name also has two extensions that specify the format and
@@ -97,8 +104,12 @@ class BlogController extends AbstractController
     #[Route('/comment/{postSlug}/new', methods: ['POST'], name: 'comment_new')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[ParamConverter('post', options: ['mapping' => ['postSlug' => 'slug']])]
-    public function commentNew(Request $request, Post $post, EventDispatcherInterface $eventDispatcher, EntityManagerInterface $entityManager): Response
-    {
+    public function commentNew(
+        Request $request,
+        Post $post,
+        EventDispatcherInterface $eventDispatcher,
+        EntityManagerInterface $entityManager
+    ): Response {
         $comment = new Comment();
         $comment->setAuthor($this->getUser());
         $post->addComment($comment);
