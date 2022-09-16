@@ -10,8 +10,7 @@ parameters:
     ignoreErrors:
        - '#no type specified#'
        - '#Component#'
+       - '#never written, only read#'
        - '#expects int, string given#'
-       - '#is always true#'
-       - '#Call to an undefined#'
     paths:
         - src
