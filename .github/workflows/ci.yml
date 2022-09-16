@@ -6,7 +6,15 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP Action
+      # You may pin to the exact commit or the version.
+        uses: shivammathur/setup-php@2.21.2
+        with:
+          # Setup PHP version.
+          php-version: 8.1
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json
       - name: LS
         run: ls
     
