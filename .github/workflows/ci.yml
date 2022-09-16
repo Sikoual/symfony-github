@@ -24,7 +24,10 @@ jobs:
       
       - name: Install Dependencies
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-      
-      - name: LS
-        run: ls
+      - name: Symfony CLI
+        run: |
+            curl -sS https://get.symfony.com/cli/installer | bash
+            mv /home/runner/.symfony/bin/symfony usr/local/bin/symfony
+      - name: Symfony check vulnerabilities
+        run: symfony check:security
     
