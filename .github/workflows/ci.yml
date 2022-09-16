@@ -35,5 +35,5 @@ jobs:
       
       - name: Ajout Php-cs-fixer
         run: |
-            composer require friendofphp/php-cs-fixer
+            composer require friendsofphp/php-cs-fixer
             ./vendor/bin/php-cs-fixer fix --dry-run
