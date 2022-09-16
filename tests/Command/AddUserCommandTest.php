@@ -23,13 +23,6 @@ class AddUserCommandTest extends AbstractCommandTest
         'full-name' => 'Chuck Norris',
     ];
 
-    protected function setUp(): void
-    {
-        if ('Windows' === \PHP_OS_FAMILY) {
-            $this->markTestSkipped('`stty` is required to test this command.');
-        }
-    }
-
     /**
      * @dataProvider isAdminDataProvider
      *
@@ -45,6 +38,24 @@ class AddUserCommandTest extends AbstractCommandTest
         $this->executeCommand($input);
 
         $this->assertUserCreated($isAdmin);
+    }
+
+    /**
+     * This helper method checks that the user was correctly created and saved
+     * in the database.
+     */
+    private function assertUserCreated(bool $isAdmin): void
+    {
+        /** @var \App\Entity\User $user */
+        $user = $this->getContainer()->get(UserRepository::class)->findOneByEmail($this->userData['email']);
+        $this->assertNotNull($user);
+
+        $this->assertSame($this->userData['full-name'], $user->getFullName());
+        $this->assertSame($this->userData['username'], $user->getUsername());
+        $this->assertTrue(
+            $this->getContainer()->get('test.user_password_hasher')->isPasswordValid($user, $this->userData['password'])
+        );
+        $this->assertSame($isAdmin ? ['ROLE_ADMIN'] : ['ROLE_USER'], $user->getRoles());
     }
 
     /**
@@ -78,20 +89,11 @@ class AddUserCommandTest extends AbstractCommandTest
         yield [true];
     }
 
-    /**
-     * This helper method checks that the user was correctly created and saved
-     * in the database.
-     */
-    private function assertUserCreated(bool $isAdmin): void
+    protected function setUp(): void
     {
-        /** @var \App\Entity\User $user */
-        $user = $this->getContainer()->get(UserRepository::class)->findOneByEmail($this->userData['email']);
-        $this->assertNotNull($user);
-
-        $this->assertSame($this->userData['full-name'], $user->getFullName());
-        $this->assertSame($this->userData['username'], $user->getUsername());
-        $this->assertTrue($this->getContainer()->get('test.user_password_hasher')->isPasswordValid($user, $this->userData['password']));
-        $this->assertSame($isAdmin ? ['ROLE_ADMIN'] : ['ROLE_USER'], $user->getRoles());
+        if ('Windows' === \PHP_OS_FAMILY) {
+            $this->markTestSkipped('`stty` is required to test this command.');
+        }
     }
 
     protected function getCommandFqcn(): string
