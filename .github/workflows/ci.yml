@@ -1,0 +1,59 @@
+name: Pipeline-CI
+on: 
+  push:
+    branches: [ main ]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP Action
+      # You may pin to the exact commit or the version.
+        uses: shivammathur/setup-php@2.21.2
+        with:
+          # Setup PHP version.
+          php-version: 8.1
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json
+          
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+      
+      - name: Install Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        
+      - name: Install Symfony CLI
+        run: |
+            curl -sS https://get.symfony.com/cli/installer | bash
+            mv /home/runner/.symfony5/bin/symfony /usr/local/bin/symfony
+            
+      - name: Symfony check vulnerabilities
+        run: symfony check:security
+      
+      - name: Ajout Php-cs-fixer
+        run: |
+            composer require friendsofphp/php-cs-fixer
+            ./vendor/bin/php-cs-fixer fix --dry-run
+      - name: PHP Stan
+        run: |
+            ./vendor/bin/simple-phpunit install
+            composer require phpstan/phpstan
+            composer require phpstan/extension-installer
+            composer require phpstan/phpstan-symfony
+            ./vendor/bin/phpstan analyse src --memory-limit 1G
+            
+      - name: Lint YAML
+        run: ./bin/console lint:yaml config --parse-tags 
+      - name: Lint Twig Templates
+        run: ./bin/console lint:twig templates --env=prod 
+      - name: Lint Parameters and Services
+        run: ./bin/console lint:container --no-debug 
+      - name: Lint Doctrine entities
+        run: ./bin/console doctrine:schema:validate --skip-sync -vvv --no-interaction 
+        
+      - name: PHP Unit
+        run: ./bin/phpunit 

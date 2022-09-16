@@ -23,13 +23,6 @@ class AddUserCommandTest extends AbstractCommandTest
         'full-name' => 'Chuck Norris',
     ];
 
-    protected function setUp(): void
-    {
-        if ('Windows' === \PHP_OS_FAMILY) {
-            $this->markTestSkipped('`stty` is required to test this command.');
-        }
-    }
-
     /**
      * @dataProvider isAdminDataProvider
      *
@@ -48,6 +41,24 @@ class AddUserCommandTest extends AbstractCommandTest
     }
 
     /**
+     * This helper method checks that the user was correctly created and saved
+     * in the database.
+     */
+    private function assertUserCreated(bool $isAdmin): void
+    {
+        /** @var \App\Entity\User $user */
+        $user = $this->getContainer()->get(UserRepository::class)->findOneByEmail($this->userData['email']);
+        $this->assertNotNull($user);
+
+        $this->assertSame($this->userData['full-name'], $user->getFullName());
+        $this->assertSame($this->userData['username'], $user->getUsername());
+        $this->assertTrue(
+            $this->getContainer()->get('test.user_password_hasher')->isPasswordValid($user, $this->userData['password'])
+        );
+        $this->assertSame($isAdmin ? ['ROLE_ADMIN'] : ['ROLE_USER'], $user->getRoles());
+    }
+
+    /**
      * @dataProvider isAdminDataProvider
      *
      * This test doesn't provide all the arguments required by the command, so
@@ -58,7 +69,7 @@ class AddUserCommandTest extends AbstractCommandTest
     public function testCreateUserInteractive(bool $isAdmin): void
     {
         $this->executeCommand(
-        // these are the arguments (only 1 is passed, the rest are missing)
+            // these are the arguments (only 1 is passed, the rest are missing)
             $isAdmin ? ['--admin' => 1] : [],
             // these are the responses given to the questions asked by the command
             // to get the value of the missing required arguments
@@ -78,20 +89,11 @@ class AddUserCommandTest extends AbstractCommandTest
         yield [true];
     }
 
-    /**
-     * This helper method checks that the user was correctly created and saved
-     * in the database.
-     */
-    private function assertUserCreated(bool $isAdmin): void
+    protected function setUp(): void
     {
-        /** @var \App\Entity\User $user */
-        $user = $this->getContainer()->get(UserRepository::class)->findOneByEmail($this->userData['email']);
-        $this->assertNotNull($user);
-
-        $this->assertSame($this->userData['full-name'], $user->getFullName());
-        $this->assertSame($this->userData['username'], $user->getUsername());
-        $this->assertTrue($this->getContainer()->get('test.user_password_hasher')->isPasswordValid($user, $this->userData['password']));
-        $this->assertSame($isAdmin ? ['ROLE_ADMIN'] : ['ROLE_USER'], $user->getRoles());
+        if ('Windows' === \PHP_OS_FAMILY) {
+            $this->markTestSkipped('`stty` is required to test this command.');
+        }
     }
 
     protected function getCommandFqcn(): string
